@@ -1,6 +1,94 @@
-map <silent> <S-F5> :call FtpRemoteSync()<CR>
-map <silent> <S-F6> :call FtpSync()<CR>
+"
+"	File:    ftpsync.vim
+"	Author:  Fabien Bouleau (syrion AT freesbee DOT fr)
+"	Version: 1.0
+"
+"	Last Modified: August 24th, 2004
+"
+"	Usage:
+"
+"   The FtpUpdate script provides you the ability to synchronize your files 
+"   with a server. The main idea when I created this script was to use GVim 
+"   and CVS to edit the files on my local PC rather than on the remote server 
+"   which might be sometimes really slow. 
+"   
+"   With S-F7, you can define the server and the remote path used. The 
+"   settings can be set for the buffer only or globally if you have many 
+"   files to synchronize from/to the same directory. You can set both, and 
+"   then buffer settings will preempt global settings. 
+"   
+"   Key mapping:
+"
+"     - <S-F5> and <S-F6>: allow you to update your file respectively from 
+"       and to the server. Asks for the synchronization parameters if needed.
+"     - <S-F7>: set the synchronization parameters.
+"     - <S-F8>: display the synchronization parameters of the current buffer.
+"   
+"   Public functions:
+"
+"     - FtpGetParam(): display the synchronization parameters of the current 
+"       buffer.
+"     - FtpSetParam(...): set the synchronization parameters
+"     - FtpSetServer(...): set the server parameter
+"     - FtpSetPath(...): set the path parameter
+"     - FtpUpdate(): put the buffer to the remote server
+"     - FtpRefresh(): get the file from the remote server
+"
+"   Note that you can set both global parameters and buffer parameters
+"   for a specific buffer which needs different parameters. The buffer 
+"   settings are taken into account before the global ones.
+"
+"   Further more, through the FtpSetPath or FtpSetServer functions, you
+"   can set only a specific path or server for a buffer, the second parameter
+"   (path or server) being taken from the global variable.
+"
+"   Example:
+"
+"   With <S-F7> you set global parameters srv1 and path /home/user1.
+"   Then for a specific buffer you type :call FtpSetPath() and set
+"   /home/dummy2 as buffer path (or type :call FtpSetPath("/home/user2","b")).
+"   Then using <S-F5> or <S-F6> on this buffer will use ftp://srv1/home/user2
+"   and ftp://srv1/home/user1 for the other ones.
+"
+"   The protocol used is FTP. Writing and reading are performed through 
+"   netrw.vim plugin, i.e. as typing 
+"   
+"       :write ftp://<server>/<path>/<file>; 
+"       or 
+"       :read ftp://<server>/<path>/<file>; 
+"
+"	Installation:
+"
+"	Copy the script into your $VIM/vimfiles/plugin
+"
+
+map <silent> <S-F5> :call FtpRefresh()<CR>
+map <silent> <S-F6> :call FtpUpdate()<CR>
 map <silent> <S-F7> :call FtpSetParam()<CR>
+map <silent> <S-F8> :call FtpGetParam()<CR>
+
+function! FtpGetParam()
+
+    if(!exists("b:FtpUpdateServer") && !exists("g:FtpUpdateServer"))
+        echo "No synchronization parameters set"
+        return
+    endif
+
+    if(exists("b:FtpUpdateServer"))
+        let l:srv = b:FtpUpdateServer
+    else
+        let l:srv = g:FtpUpdateServer
+    endif
+
+    if(exists("b:FtpUpdatePath"))
+        let l:path = b:FtpUpdatePath
+    else
+        let l:path = g:FtpUpdatePath
+    endif
+
+    echo "Synchronize: ftp://" . l:srv . l:path
+    
+endfunction
 
 function! FtpSetParam(...)
 
@@ -16,11 +104,11 @@ function! FtpSetParam(...)
 
     if l:mode != ''
         if l:server != ''
-            let {l:mode}:FtpSyncServer = l:server
-            let {l:mode}:FtpSyncPath = l:path
+            let {l:mode}:FtpUpdateServer = l:server
+            let {l:mode}:FtpUpdatePath = l:path
         else
-            unlet {l:mode}:FtpSyncServer
-            unlet {l:mode}:FtpSyncPath
+            unlet {l:mode}:FtpUpdateServer
+            unlet {l:mode}:FtpUpdatePath
         endif
     endif
 
@@ -37,7 +125,7 @@ function! FtpSetServer(...)
     endif
 
     if l:mode != ''
-        let {l:mode}:FtpSyncServer = l:server
+        let {l:mode}:FtpUpdateServer = l:server
     endif
 
 endfunction
@@ -53,49 +141,49 @@ function! FtpSetPath(...)
     endif
 
     if l:mode != ''
-        let {l:mode}:FtpSyncPath = l:path
+        let {l:mode}:FtpUpdatePath = l:path
     endif
 
 endfunction
 
-function! FtpSync()
+function! FtpUpdate()
 
-    if(!exists("b:FtpSyncServer") && !exists("g:FtpSyncServer"))
+    if(!exists("b:FtpUpdateServer") && !exists("g:FtpUpdateServer"))
         call FtpSetParam()
     endif
 
-    if(exists("b:FtpSyncServer"))
-        let l:srv = b:FtpSyncServer
+    if(exists("b:FtpUpdateServer"))
+        let l:srv = b:FtpUpdateServer
     else
-        let l:srv = g:FtpSyncServer
+        let l:srv = g:FtpUpdateServer
     endif
 
-    if(exists("b:FtpSyncPath"))
-        let l:path = b:FtpSyncPath
+    if(exists("b:FtpUpdatePath"))
+        let l:path = b:FtpUpdatePath
     else
-        let l:path = g:FtpSyncPath
+        let l:path = g:FtpUpdatePath
     endif
 
     execute "write ftp://" . l:srv . "/" . l:path . fnamemodify(bufname("%"), ":t")
 
 endfunction
 
-function! FtpRemoteSync()
+function! FtpRefresh()
 
-    if(!exists("b:FtpSyncServer") && !exists("g:FtpSyncServer"))
+    if(!exists("b:FtpUpdateServer") && !exists("g:FtpUpdateServer"))
         call FtpSetParam()
     endif
 
-    if(exists("b:FtpSyncServer"))
-        let l:srv = b:FtpSyncServer
+    if(exists("b:FtpUpdateServer"))
+        let l:srv = b:FtpUpdateServer
     else
-        let l:srv = g:FtpSyncServer
+        let l:srv = g:FtpUpdateServer
     endif
 
-    if(exists("b:FtpSyncPath"))
-        let l:path = b:FtpSyncPath
+    if(exists("b:FtpUpdatePath"))
+        let l:path = b:FtpUpdatePath
     else
-        let l:path = g:FtpSyncPath
+        let l:path = g:FtpUpdatePath
     endif
 
     norm 1GdG
