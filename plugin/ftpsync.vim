@@ -1,9 +1,9 @@
 "
 "	File:    ftpsync.vim
 "	Author:  Fabien Bouleau (syrion AT freesbee DOT fr)
-"	Version: 1.0
+"	Version: 1.1
 "
-"	Last Modified: August 24th, 2004
+"	Last Modified: September 17th, 2004
 "
 "	Usage:
 "
@@ -69,6 +69,8 @@ map <silent> <S-F8> :call FtpGetParam()<CR>
 
 function! FtpGetParam()
 
+    let l:sep = ''
+    
     if(!exists("b:FtpUpdateServer") && !exists("g:FtpUpdateServer"))
         echo "No synchronization parameters set"
         return
@@ -86,7 +88,11 @@ function! FtpGetParam()
         let l:path = g:FtpUpdatePath
     endif
 
-    echo "Synchronize: ftp://" . l:srv . l:path
+    if(l:path[0] != '/')
+        let l:sep = '/'
+    endif
+    
+    echo "Synchronize: ftp://" . l:srv . l:sep . l:path
     
 endfunction
 
