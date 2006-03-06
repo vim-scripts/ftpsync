@@ -1,9 +1,9 @@
 "
 "	File:    ftpsync.vim
-"	Author:  Fabien Bouleau (syrion AT freesbee DOT fr)
-"	Version: 1.1
+"	Author:  Fabien Bouleau (syrion AT tiscali DOT fr)
+"	Version: 1.2
 "
-"	Last Modified: September 17th, 2004
+"	Last Modified: March 06th, 2006
 "
 "	Usage:
 "
@@ -50,17 +50,21 @@
 "   Then using <S-F5> or <S-F6> on this buffer will use ftp://srv1/home/user2
 "   and ftp://srv1/home/user1 for the other ones.
 "
-"   The protocol used is FTP. Writing and reading are performed through 
-"   netrw.vim plugin, i.e. as typing 
+"   The protocol used is g:FtpSync_Proto (scp by default). Writing and reading 
+"   are performed through netrw.vim plugin, i.e. as typing 
 "   
-"       :write ftp://<server>/<path>/<file>; 
+"       :write <proto>://<server>/<path>/<file>; 
 "       or 
-"       :read ftp://<server>/<path>/<file>; 
+"       :read <proto>://<server>/<path>/<file>; 
 "
 "	Installation:
 "
 "	Copy the script into your $VIM/vimfiles/plugin
 "
+
+if !exists("g:FtpSync_Proto") 
+    let g:FtpSync_Proto="scp"
+endif
 
 map <silent> <S-F5> :call FtpRefresh()<CR>
 map <silent> <S-F6> :call FtpUpdate()<CR>
@@ -92,7 +96,7 @@ function! FtpGetParam()
         let l:sep = '/'
     endif
     
-    echo "Synchronize: ftp://" . l:srv . l:sep . l:path
+    echo "Synchronize: " . g:FtpSync_Proto . "://" . l:srv . l:sep . l:path
     
 endfunction
 
@@ -170,7 +174,7 @@ function! FtpUpdate()
         let l:path = g:FtpUpdatePath
     endif
 
-    execute "write ftp://" . l:srv . "/" . l:path . fnamemodify(bufname("%"), ":t")
+    execute "write " . g:FtpSync_Proto . "://" . l:srv . "/" . l:path . fnamemodify(bufname("%"), ":t")
 
 endfunction
 
@@ -193,7 +197,7 @@ function! FtpRefresh()
     endif
 
     norm 1GdG
-    execute "Nread ftp://" . l:srv . "/" . l:path . fnamemodify(bufname("%"), ":t")
+    execute "Nread " . g:FtpSync_Proto . "://" . l:srv . "/" . l:path . fnamemodify(bufname("%"), ":t")
     norm 1Gdd
 
 endfunction
